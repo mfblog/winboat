@@ -1,5 +1,5 @@
 import { type ComposeConfig, type InstallConfiguration } from "../../types";
-import { WINBOAT_DIR, WINBOAT_GUEST_API } from "./constants";
+import { CONTAINER_RUNTIME, WINBOAT_DIR, WINBOAT_GUEST_API } from "./constants";
 import YAML from "json-to-pretty-yaml";
 import { createLogger } from "../utils/log";
 import { createNanoEvents, type Emitter } from "nanoevents";
@@ -182,7 +182,7 @@ export class InstallManager {
         // Start the container
         try {
             // execSync(`docker compose -f ${composeFilePath} up -d`, { stdio: 'inherit' });
-            const { stdout, stderr } = await execAsync(`docker compose -f ${composeFilePath} up -d`);
+            const { stdout, stderr } = await execAsync(`${CONTAINER_RUNTIME} compose -f ${composeFilePath} up -d`);
             if (stderr) {
                 logger.error(stderr);
             }
@@ -272,12 +272,12 @@ export class InstallManager {
 }
 
 export async function isInstalled() {
-    // Check if a docker container named WinBoat exists
+    // Check if a Docker/Podman container named WinBoat exists
     try {
-        const { stdout: res } = await execAsync('docker ps -a --filter "name=WinBoat" --format "{{.Names}}"');
+        const { stdout: res } = await execAsync(`${CONTAINER_RUNTIME} ps -a --filter "name=WinBoat" --format "{{.Names}}"`);
         return res.includes('WinBoat');
     } catch(e) {
-        logger.error("Failed to get WinBoat status, is Docker installed?");
+        logger.error("Failed to get WinBoat status, is Docker/Podman installed?");
         logger.error(e);
         return false;
     }

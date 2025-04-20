@@ -77,9 +77,9 @@
                                 <a href="https://duckduckgo.com/?t=h_&q=how+to+enable+virtualization+in+%3Cmotherboard+brand%3E+bios&ia=web" @click="openAnchorLink" target="_blank" class="text-violet-400 hover:underline ml-1">How?</a>
                             </li>
                             <li class="flex items-center gap-2">
-                                <span v-if="specs.dockerInstalled" class="text-green-500">✔</span>
+                                <span v-if="specs.dockerInstalled || specs.podmanInstalled" class="text-green-500">✔</span>
                                 <span v-else class="text-red-500">✘</span>
-                                Docker installed
+                                Docker/Podman installed
                                 <a href="https://docs.docker.com/engine/install/" @click="openAnchorLink" target="_blank" class="text-violet-400 hover:underline ml-1">How?</a>
                             </li>
                             <li class="flex items-center gap-2">

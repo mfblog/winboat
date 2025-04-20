@@ -1,5 +1,5 @@
 import { ref, type Ref } from "vue";
-import { WINBOAT_DIR, WINBOAT_GUEST_API } from "./constants";
+import { CONTAINER_RUNTIME, WINBOAT_DIR, WINBOAT_GUEST_API } from "./constants";
 import type { ComposeConfig, Metrics, WinApp } from "../../types";
 import { createLogger } from "../utils/log";
 import { AppIcons } from "../data/appicons";
@@ -185,7 +185,7 @@ export class Winboat {
 
     async getContainerStatus() {
         try {
-            const { stdout: _containerStatus } = await execAsync(`docker inspect --format="{{.State.Status}}" WinBoat`);
+            const { stdout: _containerStatus } = await execAsync(`${CONTAINER_RUNTIME} inspect --format="{{.State.Status}}" WinBoat`);
             return _containerStatus.trim() as ContainerStatusValue;
         } catch(e) {
             console.error("Failed to get container status, most likely we are in the process of resetting");
@@ -217,7 +217,7 @@ export class Winboat {
         logger.info("Starting WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container start WinBoat");
+            const { stdout } = await execAsync(`${CONTAINER_RUNTIME} container start WinBoat`);
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
@@ -232,7 +232,7 @@ export class Winboat {
         logger.info("Stopping WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container stop WinBoat");
+            const { stdout } = await execAsync(`${CONTAINER_RUNTIME} container stop WinBoat`);
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
@@ -247,7 +247,7 @@ export class Winboat {
         logger.info("Pausing WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container pause WinBoat");
+            const { stdout } = await execAsync(`${CONTAINER_RUNTIME} container pause WinBoat`);
             logger.info(`Container response: ${stdout}`);
             // TODO: The heartbeat check should set this, but it doesn't because normal fetch timeout doesn't exist
             // Fix it once you change fetch to something else
@@ -265,7 +265,7 @@ export class Winboat {
         logger.info("Unpausing WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container unpause WinBoat");
+            const { stdout } = await execAsync(`${CONTAINER_RUNTIME} container unpause WinBoat`);
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
@@ -288,7 +288,7 @@ export class Winboat {
         }
 
         // 1. Compose down the current container
-        await execAsync(`docker compose -f ${composeFilePath} down`);
+        await execAsync(`${CONTAINER_RUNTIME} compose -f ${composeFilePath} down`);
 
         // 2. Create a backup directory if it doesn't exist
         const backupDir = path.join(WINBOAT_DIR, 'backup');
@@ -308,7 +308,7 @@ export class Winboat {
         logger.info(`Wrote new compose file to: ${composeFilePath}`);
 
         // 5. Deploy the container with the new compose file
-        await execAsync(`docker compose -f ${composeFilePath} up -d`);
+        await execAsync(`${CONTAINER_RUNTIME} compose -f ${composeFilePath} up -d`);
         logger.info("Replace compose config completed, successfully deployed new container");
 
         this.containerActionLoading.value = false;
@@ -322,11 +322,11 @@ export class Winboat {
         console.info("Stopped container");
         
         // 2. Remove the container
-        await execAsync("docker rm WinBoat")
+        await execAsync(`${CONTAINER_RUNTIME} rm WinBoat`)
         console.info("Removed container")
 
         // 3. Remove the container volume
-        await execAsync("docker volume rm winboat_data");
+        await execAsync(`${CONTAINER_RUNTIME} volume rm winboat_data`);
         console.info("Removed volume");
         
         // 4. Close logger

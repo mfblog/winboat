@@ -5,7 +5,7 @@ const { promisify }: typeof import('util') = require('util');
 const execAsync = promisify(exec);
 
 export function satisfiesPrequisites(specs: Specs) {
-    return specs.dockerInstalled && 
+    return (specs.dockerInstalled || specs.podmanInstalled) && 
         specs.freeRDPInstalled &&
         specs.ipTablesLoaded &&
         specs.iptableNatLoaded &&
@@ -21,6 +21,7 @@ export const defaultSpecs: Specs = {
     diskSpaceGB: 0,
     kvmEnabled: false,
     dockerInstalled: false,
+    podmanInstalled: false,
     freeRDPInstalled: false,
     ipTablesLoaded: false,
     iptableNatLoaded: false
@@ -56,6 +57,11 @@ export async function getSpecs() {
     try {
         const { stdout: dockerOutput } = await execAsync('docker --version');
         specs.dockerInstalled = !!dockerOutput;
+    } catch (e) { }
+
+    try {
+        const { stdout: podmanOutput } = await execAsync('podman --version');
+        specs.podmanInstalled = !!podmanOutput;
     } catch (e) { }
 
     try {
