@@ -43,7 +43,11 @@ export async function getSpecs() {
     } catch (e) { }
 
     try {
-        const diskStats = fs.statfsSync('/');
+        // We use /var here because /var/lib/docker is _the_ location for Docker data.
+        // Also it covers cases of immutable distros using Podman (hello Bazzite!), since
+        // /home is a symlink to /var/home there.
+        // TODO:hdkv cover cases where /home is separated from /var and Podman is used (regular Fedora?)
+        const diskStats = fs.statfsSync('/var');
         specs.diskSpaceGB = Math.round(diskStats.bavail * diskStats.bsize / 1024 / 1024 / 1024 * 100) / 100;
     } catch (e) { }
 
