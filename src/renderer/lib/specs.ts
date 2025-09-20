@@ -99,7 +99,7 @@ export async function getSpecs() {
 
     // Docker is running check
     try {
-        const { stdout: dockerOutput } = await execAsync('docker ps');
+        const { stdout: dockerOutput } = await execAsync('podman ps');
         specs.dockerIsRunning = !!dockerOutput;
     } catch (e) {
         console.error('Error checking if Docker is running:', e);

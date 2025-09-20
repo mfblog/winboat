@@ -3,6 +3,7 @@ import { WINBOAT_DIR, WINBOAT_GUEST_API } from "./constants";
 import YAML from "json-to-pretty-yaml";
 import { createLogger } from "../utils/log";
 import { createNanoEvents, type Emitter } from "nanoevents";
+import { getPodmanRun } from "./podman";
 const fs: typeof import('fs') = require('fs');
 const { exec }: typeof import('child_process') = require('child_process');
 const path: typeof import('path') = require('path');
@@ -51,7 +52,7 @@ export const DefaultCompose: ComposeConfig = {
             "volumes": [
                 "data:/storage",
                 "${HOME}:/shared",
-                "/dev/bus/usb:/dev/bus/usb", // QEMU Synamic USB Passthrough
+                "/dev/bus/usb:/dev/bus/usb", // QEMU Dynamic USB Passthrough
                 "./oem:/oem",
             ],
             "devices": [
@@ -132,6 +133,11 @@ export class InstallManager {
             composeContent.services.windows.volumes.push(`${this.conf.customIsoPath}:/boot.iso`);
         }
         
+        // TODO IF for podman
+        if(false){
+            const podmanRunCommand = getPodmanRun(this.conf);
+        }
+
         // Write the compose file
         const composeYAML = YAML.stringify(composeContent).replaceAll("null", "");
         fs.writeFileSync(composeFilePath, composeYAML, { encoding: 'utf8' });
@@ -213,6 +219,10 @@ export class InstallManager {
         try {
             // execSync(`docker compose -f ${composeFilePath} up -d`, { stdio: 'inherit' });
             const { stdout, stderr } = await execAsync(`docker compose -f ${composeFilePath} up -d`);
+
+            // TODO for podman
+            //const { stdout, stderr } = await execAsync(podmanRunCommand);
+
             if (stderr) {
                 logger.error(stderr);
             }
@@ -305,6 +315,8 @@ export async function isInstalled() {
     // Check if a docker container named WinBoat exists
     try {
         const { stdout: res } = await execAsync('docker ps -a --filter "name=WinBoat" --format "{{.Names}}"');
+        //TODO for podman
+        // const { stdout: res } = await execAsync('podman ps -a --filter "name=WinBoat" --format "{{.Names}}"');
         return res.includes('WinBoat');
     } catch(e) {
         logger.error("Failed to get WinBoat status, is Docker installed?");

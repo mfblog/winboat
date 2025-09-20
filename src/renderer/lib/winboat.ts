@@ -358,7 +358,7 @@ export class Winboat {
 
     async getContainerStatus() {
         try {
-            const { stdout: _containerStatus } = await execAsync(`docker inspect --format="{{.State.Status}}" WinBoat`);
+            const { stdout: _containerStatus } = await execAsync(`podman inspect --format="{{.State.Status}}" WinBoat`);
             return _containerStatus.trim() as ContainerStatusValue;
         } catch(e) {
             console.error("Failed to get container status, most likely we are in the process of resetting");
@@ -432,7 +432,7 @@ export class Winboat {
         logger.info("Starting WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container start WinBoat");
+            const { stdout } = await execAsync("podman container start WinBoat");
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
@@ -447,7 +447,7 @@ export class Winboat {
         logger.info("Stopping WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container stop WinBoat");
+            const { stdout } = await execAsync("podman container stop WinBoat");
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
@@ -462,7 +462,7 @@ export class Winboat {
         logger.info("Pausing WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container pause WinBoat");
+            const { stdout } = await execAsync("podman container pause WinBoat");
             logger.info(`Container response: ${stdout}`);
             // TODO: The heartbeat check should set this, but it doesn't because normal fetch timeout doesn't exist
             // Fix it once you change fetch to something else
@@ -480,7 +480,7 @@ export class Winboat {
         logger.info("Unpausing WinBoat container...");
         this.containerActionLoading.value = true;
         try {
-            const { stdout } = await execAsync("docker container unpause WinBoat");
+            const { stdout } = await execAsync("podman container unpause WinBoat");
             logger.info(`Container response: ${stdout}`);
         } catch(e) {
             logger.error("There was an error performing the container action.");
