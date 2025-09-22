@@ -74,6 +74,24 @@
                         ></x-switch>
                     </div>
                 </x-card>
+                <div class="flex flex-col">
+                    <p class="my-0 text-red-500" v-for="error, k of resourceErrors" :key="k">
+                        ❗ {{ error }}
+                    </p>
+                </div>
+                <x-button
+                    :disabled="resourceSaveButtonDisabled || isUpdatingUSBPrerequisites"
+                    @click="applyResourceChanges()"
+                    class="w-24"
+                >
+                    <span v-if="!isApplyingChanges || isUpdatingUSBPrerequisites">Save</span>
+                    <x-throbber v-else class="w-10"></x-throbber>
+                </x-button>
+            </div>
+        </div>
+        <div>
+            <x-label class="mb-4 text-neutral-300">Ports</x-label>
+            <div class="flex flex-col gap-4">
                 <x-card
                     class="flex items-center p-2 flex-row justify-between w-full py-3 my-0 bg-neutral-800/20 backdrop-brightness-150 backdrop-blur-xl">
                     <div>
@@ -90,22 +108,94 @@
                     <div class="flex flex-row justify-center items-center gap-2">
                         <x-input
                             class="max-w-16 text-right text-[1.1rem]"
-                            min="0"
+                            min="PORT_MIN"
                             :max="PORT_MAX"
                             :value="freerdpPort"
-                            @input="(e: any) => freerdpPort = Number(/^\d+$/.exec(e.target.value)![0] || RDP_PORT)"
+                            @input="(e: any) => freerdpPort = Number(/^\d+$/.exec(e.target.value)?.[0] || RDP_PORT)"
+                            required
+                        ></x-input>
+                    </div>
+                </x-card>
+                <x-card
+                    class="flex items-center p-2 flex-row justify-between w-full py-3 my-0 bg-neutral-800/20 backdrop-brightness-150 backdrop-blur-xl">
+                    <div>
+                        <div class="flex flex-row items-center gap-2 mb-2">
+                            <Icon class="text-violet-400 inline-flex size-8" icon="material-symbols:web"></Icon>
+                            <h1 class="text-lg my-0 font-semibold">
+                                VNC Web Interface Port
+                            </h1>
+                        </div>
+                        <p class="text-neutral-400 text-[0.9rem] !pt-0 !mt-0">
+                            Port for accessing the VNC web interface
+                        </p>
+                    </div>
+                    <div class="flex flex-row justify-center items-center gap-2">
+                        <x-input
+                            class="max-w-16 text-right text-[1.1rem]"
+                            min="PORT_MIN"
+                            :max="PORT_MAX"
+                            :value="vncWebPort"
+                            @input="(e: any) => vncWebPort = Number(/^\d+$/.exec(e.target.value)?.[0] || VNC_WEB_PORT)"
+                            required
+                        ></x-input>
+                    </div>
+                </x-card>
+                <x-card
+                    class="flex items-center p-2 flex-row justify-between w-full py-3 my-0 bg-neutral-800/20 backdrop-brightness-150 backdrop-blur-xl">
+                    <div>
+                        <div class="flex flex-row items-center gap-2 mb-2">
+                            <Icon class="text-violet-400 inline-flex size-8" icon="mdi:api"></Icon>
+                            <h1 class="text-lg my-0 font-semibold">
+                                Guest API Port
+                            </h1>
+                        </div>
+                        <p class="text-neutral-400 text-[0.9rem] !pt-0 !mt-0">
+                            Port for the Winboat Guest Server API
+                        </p>
+                    </div>
+                    <div class="flex flex-row justify-center items-center gap-2">
+                        <x-input
+                            class="max-w-16 text-right text-[1.1rem]"
+                            min="PORT_MIN"
+                            :max="PORT_MAX"
+                            :value="guestApiPort"
+                            @input="(e: any) => guestApiPort = Number(/^\d+$/.exec(e.target.value)?.[0] || GUEST_API_PORT)"
+                            required
+                        ></x-input>
+                    </div>
+                </x-card>
+                <x-card
+                    class="flex items-center p-2 flex-row justify-between w-full py-3 my-0 bg-neutral-800/20 backdrop-brightness-150 backdrop-blur-xl">
+                    <div>
+                        <div class="flex flex-row items-center gap-2 mb-2">
+                            <Icon class="text-violet-400 inline-flex size-8" icon="simple-icons:qemu"></Icon>
+                            <h1 class="text-lg my-0 font-semibold">
+                                QEMU QMP Port
+                            </h1>
+                        </div>
+                        <p class="text-neutral-400 text-[0.9rem] !pt-0 !mt-0">
+                            Port for QEMU QMP (QEMU Machine Protocol) communication
+                        </p>
+                    </div>
+                    <div class="flex flex-row justify-center items-center gap-2">
+                        <x-input
+                            class="max-w-16 text-right text-[1.1rem]"
+                            min="PORT_MIN"
+                            :max="PORT_MAX"
+                            :value="qemuQmpPort"
+                            @input="(e: any) => qemuQmpPort = Number(/^\d+$/.exec(e.target.value)?.[0] || QEMU_QMP_PORT)"
                             required
                         ></x-input>
                     </div>
                 </x-card>
                 <div class="flex flex-col">
-                    <p class="my-0 text-red-500" v-for="error, k of errors" :key="k">
+                    <p class="my-0 text-red-500" v-for="error, k of portErrors" :key="k">
                         ❗ {{ error }}
                     </p>
                 </div>
                 <x-button
-                    :disabled="saveButtonDisabled || isUpdatingUSBPrerequisites"
-                    @click="applyChanges()"
+                    :disabled="portSaveButtonDisabled || isUpdatingUSBPrerequisites"
+                    @click="applyPortChanges()"
                     class="w-24"
                 >
                     <span v-if="!isApplyingChanges || isUpdatingUSBPrerequisites">Save</span>
@@ -366,6 +456,10 @@ import { USBManager, type PTSerializableDeviceInfo } from '../lib/usbmanager';
 import { type Device } from "usb";
 import {
     RDP_PORT,
+    VNC_WEB_PORT,
+    GUEST_API_PORT,
+    QEMU_QMP_PORT,
+    PORT_MIN,
     PORT_MAX,
     USB_VID_BLACKLIST
 } from '../lib/constants';
@@ -395,6 +489,12 @@ const origShareHomeFolder = ref(false);
 const shareHomeFolder = ref(false);
 const freerdpPort = ref(0);
 const origFreerdpPort = ref(0);
+const vncWebPort = ref(0);
+const origVncWebPort = ref(0);
+const guestApiPort = ref(0);
+const origGuestApiPort = ref(0);
+const qemuQmpPort = ref(0);
+const origQemuQmpPort = ref(0);
 const isApplyingChanges = ref(false);
 const resetQuestionCounter = ref(0);
 const isResettingWinboat = ref(false);
@@ -428,6 +528,18 @@ async function assignValues() {
     const rdpEntry = compose.value.services.windows.ports.find(x => x.includes(`:${RDP_PORT}`))
     freerdpPort.value = Number(rdpEntry?.split(":")?.at(0) ?? RDP_PORT);
     origFreerdpPort.value = freerdpPort.value;
+    
+    const vncWebEntry = compose.value.services.windows.ports.find(x => x.includes(`:${VNC_WEB_PORT}`))
+    vncWebPort.value = Number(vncWebEntry?.split(":")?.at(0) ?? VNC_WEB_PORT);
+    origVncWebPort.value = vncWebPort.value;
+    
+    const guestApiEntry = compose.value.services.windows.ports.find(x => x.includes(`:${GUEST_API_PORT}`))
+    guestApiPort.value = Number(guestApiEntry?.split(":")?.at(0) ?? GUEST_API_PORT);
+    origGuestApiPort.value = guestApiPort.value;
+    
+    const qemuQmpEntry = compose.value.services.windows.ports.find(x => x.includes(`:${QEMU_QMP_PORT}`))
+    qemuQmpPort.value = Number(qemuQmpEntry?.split(":")?.at(0) ?? QEMU_QMP_PORT);
+    origQemuQmpPort.value = qemuQmpPort.value;
 
     const specs = await getSpecs();
     maxRamGB.value = specs.ramGB;
@@ -437,23 +549,6 @@ async function assignValues() {
 }
 
 async function saveDockerCompose() {
-    compose.value!.services.windows.environment.RAM_SIZE = `${ramGB.value}G`;
-    compose.value!.services.windows.environment.CPU_CORES = `${numCores.value}`;
-
-    const composeHasHomefolderShare = compose.value!.services.windows.volumes.includes(HOMEFOLDER_SHARE_STR);
-
-    if (shareHomeFolder.value && !composeHasHomefolderShare) {
-        compose.value!.services.windows.volumes.push(HOMEFOLDER_SHARE_STR);
-    } else if (!shareHomeFolder.value && composeHasHomefolderShare) {
-        compose.value!.services.windows.volumes = compose.value!.services.windows.volumes.filter(v => v !== HOMEFOLDER_SHARE_STR);
-    }
-
-    const newPortEntries = compose.value!.services.windows.ports.filter(x => !x.includes(`:${RDP_PORT}`));
-
-    newPortEntries.push(`${freerdpPort.value}:${RDP_PORT}/tcp`);
-    newPortEntries.push(`${freerdpPort.value}:${RDP_PORT}/udp`);
-    compose.value!.services.windows.ports = newPortEntries;
-
     isApplyingChanges.value = true;
     try {
         await winboat.replaceCompose(compose.value!);
@@ -466,16 +561,39 @@ async function saveDockerCompose() {
     }
 }
 
-async function applyChanges() {
-    compose.value!.services.windows.environment.RAM_SIZE = `${ramGB.value}G`;
-    compose.value!.services.windows.environment.CPU_CORES = `${numCores.value}`;
+async function applyResourceChanges() {
+    // Only apply resource changes if they have been made
+    if (hasResourceChanges.value) {
+        compose.value!.services.windows.environment.RAM_SIZE = `${ramGB.value}G`;
+        compose.value!.services.windows.environment.CPU_CORES = `${numCores.value}`;
 
-    const composeHasHomefolderShare = compose.value!.services.windows.volumes.includes(HOMEFOLDER_SHARE_STR);
+        const composeHasHomefolderShare = compose.value!.services.windows.volumes.includes(HOMEFOLDER_SHARE_STR);
 
-    if (shareHomeFolder.value && !composeHasHomefolderShare) {
-        compose.value!.services.windows.volumes.push(HOMEFOLDER_SHARE_STR);
-    } else if (!shareHomeFolder.value && composeHasHomefolderShare) {
-        compose.value!.services.windows.volumes = compose.value!.services.windows.volumes.filter(v => v !== HOMEFOLDER_SHARE_STR);
+        if (shareHomeFolder.value && !composeHasHomefolderShare) {
+            compose.value!.services.windows.volumes.push(HOMEFOLDER_SHARE_STR);
+        } else if (!shareHomeFolder.value && composeHasHomefolderShare) {
+            compose.value!.services.windows.volumes = compose.value!.services.windows.volumes.filter(v => v !== HOMEFOLDER_SHARE_STR);
+        }
+    }
+
+    await saveDockerCompose();
+}
+
+async function applyPortChanges() {
+    // Only apply port changes if they have been made
+    if (hasPortChanges.value) {
+        const newPortEntries = compose.value!.services.windows.ports
+            .filter(x => !x.includes(`:${RDP_PORT}`))
+            .filter(x => !x.includes(`:${VNC_WEB_PORT}`))
+            .filter(x => !x.includes(`:${GUEST_API_PORT}`))
+            .filter(x => !x.includes(`:${QEMU_QMP_PORT}`));
+
+        newPortEntries.push(`${freerdpPort.value}:${RDP_PORT}/tcp`);
+        newPortEntries.push(`${freerdpPort.value}:${RDP_PORT}/udp`);
+        newPortEntries.push(`${vncWebPort.value}:${VNC_WEB_PORT}`);
+        newPortEntries.push(`${guestApiPort.value}:${GUEST_API_PORT}`);
+        newPortEntries.push(`${qemuQmpPort.value}:${QEMU_QMP_PORT}`);
+        compose.value!.services.windows.ports = newPortEntries;
     }
 
     await saveDockerCompose();
@@ -515,7 +633,7 @@ async function addRequiredComposeFieldsUSB() {
     isUpdatingUSBPrerequisites.value = false;
 }
 
-const errors = computed(() => {
+const resourceErrors = computed(() => {
     let errCollection: string[] = [];
 
     if (!numCores.value || numCores.value < 2) {
@@ -537,6 +655,35 @@ const errors = computed(() => {
     return errCollection;
 })
 
+const portErrors = computed(() => {
+    let errCollection: string[] = [];
+
+    if (!freerdpPort.value || freerdpPort.value < PORT_MIN || freerdpPort.value > PORT_MAX) {
+        errCollection.push(`FreeRDP port must be between ${PORT_MIN} and ${PORT_MAX}`)
+    }
+
+    if (!vncWebPort.value || vncWebPort.value < PORT_MIN || vncWebPort.value > PORT_MAX) {
+        errCollection.push(`VNC Web port must be between ${PORT_MIN} and ${PORT_MAX}`)
+    }
+
+    if (!guestApiPort.value || guestApiPort.value < PORT_MIN || guestApiPort.value > PORT_MAX) {
+        errCollection.push(`Guest API port must be between ${PORT_MIN} and ${PORT_MAX}`)
+    }
+
+    if (!qemuQmpPort.value || qemuQmpPort.value < PORT_MIN || qemuQmpPort.value > PORT_MAX) {
+        errCollection.push(`QEMU QMP port must be between ${PORT_MIN} and ${PORT_MAX}`)
+    }
+
+    // Check for port conflicts
+    const ports = [freerdpPort.value, vncWebPort.value, guestApiPort.value, qemuQmpPort.value];
+    const uniquePorts = new Set(ports);
+    if (ports.length !== uniquePorts.size) {
+        errCollection.push("All ports must be unique")
+    }
+
+    return errCollection;
+})
+
 const hasUsbVolume = (_compose: typeof compose) => _compose.value?.services.windows.volumes?.includes(USB_BUS_PATH);
 const hasQmpArgument = (_compose: typeof compose) => _compose.value?.services.windows.environment.ARGUMENTS?.includes(QMP_ARGUMENT);
 const hasQmpPort = (_compose: typeof compose) => _compose.value?.services.windows.ports?.includes(`${QMP_PORT}:${QMP_PORT}`)
@@ -546,16 +693,32 @@ const usbPassthroughDisabled = computed(() => {
     return !hasUsbVolume(compose) || !hasQmpArgument(compose) || !hasQmpPort(compose) || !hasHostPort(compose);
 })
 
-const saveButtonDisabled = computed(() => {
-    const hasResourceChanges = 
-        origNumCores.value !== numCores.value || 
-        origRamGB.value !== ramGB.value || 
-        shareHomeFolder.value !== origShareHomeFolder.value || 
-        freerdpPort.value !== origFreerdpPort.value;
+const hasResourceChanges = computed(() => {
+    return origNumCores.value !== numCores.value ||
+        origRamGB.value !== ramGB.value ||
+        shareHomeFolder.value !== origShareHomeFolder.value;
+});
 
-    const shouldBeDisabled = 
-        errors.value.length || 
-        !hasResourceChanges || 
+const hasPortChanges = computed(() => {
+    return freerdpPort.value !== origFreerdpPort.value ||
+        vncWebPort.value !== origVncWebPort.value ||
+        guestApiPort.value !== origGuestApiPort.value ||
+        qemuQmpPort.value !== origQemuQmpPort.value;
+});
+
+const resourceSaveButtonDisabled = computed(() => {
+    const shouldBeDisabled =
+        resourceErrors.value.length ||
+        !hasResourceChanges.value ||
+        isApplyingChanges.value;
+        
+    return shouldBeDisabled;
+})
+
+const portSaveButtonDisabled = computed(() => {
+    const shouldBeDisabled =
+        portErrors.value.length ||
+        !hasPortChanges.value ||
         isApplyingChanges.value;
         
     return shouldBeDisabled;

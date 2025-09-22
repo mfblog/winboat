@@ -316,6 +316,89 @@
                         </div>
                     </div>
     
+                    <!-- Port Configuration -->
+                    <div v-if="currentStep.id === StepID.PORT_CONFIG" class="step-block">
+                        <h1 class="text-3xl font-semibold">{{ currentStep.title }}</h1>
+                        <p class="text-lg text-gray-400">
+                            Configure the ports that WinBoat will use for its services. You can customize these ports if the defaults conflict with other services on your system.
+                        </p>
+
+                        <div class="flex flex-col gap-6">
+                            <div>
+                                <label for="select-rdp-port" class="text-sm text-neutral-400">RDP Port (Remote Desktop)</label>
+                                <div class="flex flex-row gap-4 items-center">
+                                    <x-slider
+                                        id="select-rdp-port"
+                                        @change="(e: any) => ports.rdpPort = Number(e.target.value)"
+                                        class="w-[50%]"
+                                        :value="ports.rdpPort"
+                                        :min="PORT_MIN"
+                                        :max="PORT_MAX"
+                                        step="1"
+                                        ticks
+                                    ></x-slider>
+                                    <x-label>{{ ports.rdpPort }}</x-label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="select-vnc-port" class="text-sm text-neutral-400">VNC Web Interface Port</label>
+                                <div class="flex flex-row gap-4 items-center">
+                                    <x-slider
+                                        id="select-vnc-port"
+                                        @change="(e: any) => ports.vncWebPort = Number(e.target.value)"
+                                        class="w-[50%]"
+                                        :value="ports.vncWebPort"
+                                        :min="PORT_MIN"
+                                        :max="PORT_MAX"
+                                        step="1"
+                                        ticks
+                                    ></x-slider>
+                                    <x-label>{{ ports.vncWebPort }}</x-label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="select-api-port" class="text-sm text-neutral-400">Guest API Port</label>
+                                <div class="flex flex-row gap-4 items-center">
+                                    <x-slider
+                                        id="select-api-port"
+                                        @change="(e: any) => ports.guestApiPort = Number(e.target.value)"
+                                        class="w-[50%]"
+                                        :value="ports.guestApiPort"
+                                        :min="PORT_MIN"
+                                        :max="PORT_MAX"
+                                        step="1"
+                                        ticks
+                                    ></x-slider>
+                                    <x-label>{{ ports.guestApiPort }}</x-label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="select-qmp-port" class="text-sm text-neutral-400">QEMU QMP Port</label>
+                                <div class="flex flex-row gap-4 items-center">
+                                    <x-slider
+                                        id="select-qmp-port"
+                                        @change="(e: any) => ports.qemuQmpPort = Number(e.target.value)"
+                                        class="w-[50%]"
+                                        :value="ports.qemuQmpPort"
+                                        :min="PORT_MIN"
+                                        :max="PORT_MAX"
+                                        step="1"
+                                        ticks
+                                    ></x-slider>
+                                    <x-label>{{ ports.qemuQmpPort }}</x-label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-row gap-4 mt-6">
+                            <x-button class="px-6" @click="currentStepIdx--">Back</x-button>
+                            <x-button toggled class="px-6" @click="currentStepIdx++">Next</x-button>
+                        </div>
+                    </div>
+
                     <!-- Hardware Configuration -->
                     <div v-if="currentStep.id === StepID.HARDWARE_CONFIG" class="step-block">
                         <h1 class="text-3xl font-semibold">{{ currentStep.title }}</h1>
@@ -399,7 +482,19 @@
     
                         <div class="flex flex-row gap-4 mt-6">
                             <x-button class="px-6" @click="currentStepIdx--">Back</x-button>
-                            <x-button toggled class="px-6" @click="currentStepIdx++">Next</x-button>
+                            <x-button
+                                :disabled="portErrors.length > 0"
+                                toggled
+                                class="px-6"
+                                @click="currentStepIdx++"
+                            >Next</x-button>
+                        </div>
+                        
+                        <div v-if="portErrors.length > 0" class="text-red-400 text-sm font-semibold space-y-1">
+                            <div v-for="error in portErrors" :key="error">
+                                <Icon icon="line-md:alert" class="inline size-4 -translate-y-0.5"></Icon>
+                                {{ error }}
+                            </div>
                         </div>
                     </div>
     
@@ -437,6 +532,22 @@
                                 <div class="flex flex-col">
                                     <span class="text-sm text-gray-400">Username</span>
                                     <span class="text-base text-white">{{ username }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-gray-400">RDP Port</span>
+                                    <span class="text-base text-white">{{ ports.rdpPort }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-gray-400">VNC Web Port</span>
+                                    <span class="text-base text-white">{{ ports.vncWebPort }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-gray-400">Guest API Port</span>
+                                    <span class="text-base text-white">{{ ports.guestApiPort }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-gray-400">QEMU QMP Port</span>
+                                    <span class="text-base text-white">{{ ports.qemuQmpPort }}</span>
                                 </div>
                             </div>
                         </div>
@@ -496,7 +607,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { InstallConfiguration, Specs } from '../../types';
 import { getSpecs, getMemoryInfo, defaultSpecs, satisfiesPrequisites, type MemoryInfo } from '../lib/specs';
-import { WINDOWS_VERSIONS, WINDOWS_LANGUAGES, type WindowsVersionKey } from "../lib/constants";
+import { WINDOWS_VERSIONS, WINDOWS_LANGUAGES, type WindowsVersionKey, RDP_PORT, VNC_WEB_PORT, GUEST_API_PORT, QEMU_QMP_PORT, PORT_MIN, PORT_MAX } from "../lib/constants";
 import { InstallManager, type InstallState, InstallStates } from '../lib/install';
 import { openAnchorLink } from '../utils/openLink';
 import license from '../assets/LICENSE.txt?raw'
@@ -516,8 +627,9 @@ enum StepID {
     PREREQUISITES = "STEP_PREREQUISITES",
     LICENSE = "STEP_LICENSE",
     WINDOWS_CONFIG = "STEP_WINDOWS_CONFIG",
-    HARDWARE_CONFIG = "STEP_HARDWARE_CONFIG",
     USER_CONFIG = "STEP_USER_CONFIG",
+    PORT_CONFIG = "STEP_PORT_CONFIG",
+    HARDWARE_CONFIG = "STEP_HARDWARE_CONFIG",
     REVIEW = "STEP_OVERVIEW",
     INSTALL = "STEP_INSTALL",
     FINISH = "STEP_FINISH",
@@ -548,6 +660,11 @@ const steps: Step[] = [
         id: StepID.USER_CONFIG,
         title: "User Configuration",
         icon: "line-md:account",
+    },
+    {
+        id: StepID.PORT_CONFIG,
+        title: "Port Configuration",
+        icon: "mdi:network-outline",
     },
     {
         id: StepID.HARDWARE_CONFIG,
@@ -590,6 +707,12 @@ const diskSpaceGB = ref(32);
 const username = ref("winboat");
 const password = ref("");
 const confirmPassword = ref("");
+const ports = ref({
+    rdpPort: RDP_PORT,
+    vncWebPort: VNC_WEB_PORT,
+    guestApiPort: GUEST_API_PORT,
+    qemuQmpPort: QEMU_QMP_PORT,
+});
 const installState = ref<InstallState>(InstallStates.IDLE);
 const preinstallMsg = ref("");
 
@@ -650,6 +773,42 @@ const passwordErrors = computed(() => {
     return errors;
 })
 
+const portErrors = computed(() => {
+    let errors: string[] = [];
+    
+    // Check if ports are within valid range
+    if (ports.value.rdpPort < PORT_MIN || ports.value.rdpPort > PORT_MAX) {
+        errors.push("RDP port must be between 1024 and 65535");
+    }
+    
+    if (ports.value.vncWebPort < PORT_MIN || ports.value.vncWebPort > PORT_MAX) {
+        errors.push("VNC Web port must be between 1024 and 65535");
+    }
+    
+    if (ports.value.guestApiPort < PORT_MIN || ports.value.guestApiPort > PORT_MAX) {
+        errors.push("Guest API port must be between 1024 and 65535");
+    }
+    
+    if (ports.value.qemuQmpPort < PORT_MIN || ports.value.qemuQmpPort > PORT_MAX) {
+        errors.push("QEMU QMP port must be between 1024 and 65535");
+    }
+    
+    // Check for port conflicts
+    const portValues = [
+        ports.value.rdpPort,
+        ports.value.vncWebPort,
+        ports.value.guestApiPort,
+        ports.value.qemuQmpPort
+    ];
+    
+    const uniquePorts = new Set(portValues);
+    if (uniquePorts.size !== portValues.length) {
+        errors.push("All ports must be unique");
+    }
+    
+    return errors;
+})
+
 
 function selectIsoFile() {
     electron.dialog.showOpenDialog({
@@ -689,6 +848,12 @@ function install() {
         diskSpaceGB: diskSpaceGB.value,
         username: username.value,
         password: password.value,
+        ports: {
+            rdpPort: ports.value.rdpPort,
+            vncWebPort: ports.value.vncWebPort,
+            guestApiPort: ports.value.guestApiPort,
+            qemuQmpPort: ports.value.qemuQmpPort,
+        },
         ...(customIsoPath.value ? { customIsoPath: customIsoPath.value } : {}),
     }
 

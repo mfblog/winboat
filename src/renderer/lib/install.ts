@@ -43,8 +43,8 @@ export const DefaultCompose: ComposeConfig = {
                 "8006:8006", // VNC Web Interface
                 "7148:7148", // Winboat Guest Server API
                 "7149:7149", // QEMU QMP Port
-                "3389:3389/tcp", // RDP
-                "3389:3389/udp" // RDP
+                "3389:3389/tcp", // RDP TCP
+                "3389:3389/udp" // RDP UDP
             ],
             "stop_grace_period": "120s",
             "restart": "on-failure",
@@ -127,6 +127,18 @@ export class InstallManager {
         composeContent.services.windows.environment.LANGUAGE = this.conf.windowsLanguage;
         composeContent.services.windows.environment.USERNAME = this.conf.username;
         composeContent.services.windows.environment.PASSWORD = this.conf.password;
+        
+        // Update ports
+        composeContent.services.windows.ports = [
+            `${this.conf.ports.vncWebPort}:8006`, // VNC Web Interface
+            `${this.conf.ports.guestApiPort}:7148`, // Winboat Guest Server API
+            `${this.conf.ports.qemuQmpPort}:7149`, // QEMU QMP Port
+            `${this.conf.ports.rdpPort}:3389/tcp`, // RDP TCP
+            `${this.conf.ports.rdpPort}:3389/udp` // RDP UDP
+        ];
+        
+        // Update HOST_PORTS environment variable
+        composeContent.services.windows.environment.HOST_PORTS = this.conf.ports.qemuQmpPort.toString();
         
         if (this.conf.customIsoPath) {
             composeContent.services.windows.volumes.push(`${this.conf.customIsoPath}:/boot.iso`);

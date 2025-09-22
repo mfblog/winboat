@@ -14,6 +14,13 @@ export type Specs = {
     iptableNatLoaded: boolean;
 }
 
+export type PortConfiguration = {
+    rdpPort: number;
+    vncWebPort: number;
+    guestApiPort: number;
+    qemuQmpPort: number;
+};
+
 export type InstallConfiguration = {
     windowsVersion: WindowsVersionKey;
     windowsLanguage: string;
@@ -23,6 +30,7 @@ export type InstallConfiguration = {
     username: string;
     password: string;
     customIsoPath?: string;
+    ports: PortConfiguration;
 }
 
 export type WinApp = {

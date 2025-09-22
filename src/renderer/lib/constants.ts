@@ -57,7 +57,11 @@ export const WINDOWS_LANGUAGES = {
 
 // Ports
 export const RDP_PORT = 3389;
+export const VNC_WEB_PORT = 8006;
+export const GUEST_API_PORT = 7148;
+export const QEMU_QMP_PORT = 7149;
 export const PORT_MAX = 65535;
+export const PORT_MIN = 1024;
 
 // USB
 export const USB_CLASS_IMAGING = 6;
